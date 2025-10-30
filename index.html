@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Карта Екатеринбурга</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* 3D карта на весь экран */
+        .map-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        #map3d {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Аккуратная панелька выбора маршрута */
+        .route-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .route-title {
+            font-size: 0.75em;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .route-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .route-btn {
+            padding: 10px 16px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .route-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateX(2px);
+        }
+
+        .route-btn.active {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+            font-weight: 600;
+        }
+
+        .route-btn.hidden {
+            display: none;
+        }
+
+        /* Поле ввода пригласительного кода */
+        .invite-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .invite-label {
+            font-size: 0.7em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .invite-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .invite-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: none;
+            letter-spacing: 1px;
+        }
+
+        .invite-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Экран загрузки */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-text {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Адаптация под мобильные устройства */
+        @media (max-width: 768px) {
+            .route-panel {
+                top: 15px;
+                left: 15px;
+                padding: 12px 16px;
+                border-radius: 12px;
+            }
+
+            .route-title {
+                font-size: 0.7em;
+                margin-bottom: 8px;
+            }
+
+            .route-btn {
+                padding: 8px 12px;
+                font-size: 0.75em;
+            }
+
+            .invite-section {
+                margin-top: 12px;
+                padding-top: 12px;
+            }
+
+            .invite-label {
+                font-size: 0.65em;
+            }
+
+            .invite-input {
+                padding: 8px 10px;
+                font-size: 0.75em;
+            }
+
+            .loading-text {
+                font-size: 1em;
+            }
+
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .route-panel {
+                top: 10px;
+                left: 10px;
+                padding: 10px 14px;
+                border-radius: 10px;
+            }
+
+            .route-title {
+                font-size: 0.65em;
+            }
+
+            .route-btn {
+                padding: 7px 10px;
+                font-size: 0.7em;
+            }
+
+            .invite-section {
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+
+            .invite-label {
+                font-size: 0.6em;
+            }
+
+            .invite-input {
+                padding: 7px 9px;
+                font-size: 0.7em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 3D карта на весь экран -->
+    <div class="map-container">
+        <div id="map3d"></div>
+    </div>
+
+    <!-- Аккуратная панелька выбора маршрута -->
+    <div class="route-panel">
+        <div class="route-title">Маршрут</div>
+        <div class="route-buttons">
+            <button class="route-btn active" data-route="historical">Исторический</button>
+            <button class="route-btn" data-route="cultural">Культурный</button>
+            <button class="route-btn" data-route="gastronomic">Гастрономический</button>
+            <button class="route-btn hidden" data-route="party" id="partyRouteBtn">Тусовочный</button>
+        </div>
+        <div class="invite-section">
+            <div class="invite-label">Ввести пригласительный код:</div>
+            <input type="text" class="invite-input" id="inviteCode" placeholder="Введите код" maxlength="20">
+        </div>
+    </div>
+
+    <!-- Экран загрузки -->
+    <div class="loading" id="loading">
+        <div class="loading-text">Загрузка...</div>
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="map3d.js"></script>
+</body>
+</html>
